@@ -122,7 +122,7 @@ func nextAdId() string {
 }
 
 func assetPath(id string) string {
-	return fmt.Sprintf("/home/isucon/%d", id)
+	return fmt.Sprintf("/home/isucon/data/%d", id)
 }
 
 func nextAd(req *http.Request, slot string) *AdWithEndpoints {
