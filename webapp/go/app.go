@@ -15,7 +15,6 @@ import (
 	"github.com/go-martini/martini"
 	"github.com/go-redis/redis"
 	"github.com/martini-contrib/render"
-	"time"
 )
 
 type Ad struct {
@@ -284,7 +283,6 @@ func routePostAd(r render.Render, req *http.Request, params martini.Params) {
 	defer localFile.Close()
 	io.Copy(localFile, f)
 
-	rd.Set(assetKey(slot, id), asset_data, 60*time.Second)
 	rd.RPush(slotKey(slot), id)
 	rd.SAdd(advertiserKey(advrId), key)
 
@@ -332,10 +330,11 @@ func routeGetAdAsset(r render.Render, res http.ResponseWriter, req *http.Request
 
 	buf := bytes.NewBuffer(nil)
 	io.Copy(buf, f)
+	data := buf.Bytes()
 
 	range_str := req.Header.Get("Range")
 	if range_str == "" {
-		r.Data(200, buf.Bytes())
+		r.Data(200, data)
 		return
 	}
 
