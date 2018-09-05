@@ -1,0 +1,6 @@
+name             "common-packages"
+maintainer       "YOUR_COMPANY_NAME"
+maintainer_email "YOUR_EMAIL"
+license          "All rights reserved"
+description      "Installs/Configures common-packages"
+version          "0.0.1"

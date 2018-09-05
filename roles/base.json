@@ -1,0 +1,17 @@
+{
+  "name": "base",
+  "default_attributes": {
+    "accounts": {
+      "app_user": "isucon"
+    }
+  },
+  "run_list": [
+    "recipe[accounts]",
+    "recipe[accounts::root]",
+    "recipe[accounts::app]",
+    "recipe[alp]",
+    "recipe[common-packages]",
+    "recipe[percona-toolkit]",
+    "recipe[nssh]"
+  ]
+}
