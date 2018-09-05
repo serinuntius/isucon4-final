@@ -23,7 +23,12 @@ sync:
 all-chef:
 	nssh -t isu1 -t isu2 -t isu3 -t isu4 /home/$(APP_USER)/$(REPO)/chef/run-chef.sh
 
+.PHONY: build
+build:
+	cd /home/isucon/webapp/go && ./build.sh
+
+
 .PHONY: deploy
 deploy:
 	make sync
-	nssh -t isu1 -t isu2 -t isu3 -t isu4 ssh_all /home/$(APP_USER)/$(REPO)/chef/deploy.sh
+	for i in {2..4}; do rsync --exclude .git -av /home/$(APP_USER)/isucon4-final/webapp/ isu$${i}:/home/$(APP_USER)/webapp/; done
