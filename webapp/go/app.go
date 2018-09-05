@@ -15,6 +15,7 @@ import (
 	"github.com/go-martini/martini"
 	"github.com/go-redis/redis"
 	"github.com/martini-contrib/render"
+	"time"
 )
 
 type Ad struct {
@@ -58,7 +59,7 @@ type BreakdownReport struct {
 var rd *redis.Client
 
 func init() {
-	rd = redis.NewTCPClient(&redis.Options{
+	rd = redis.NewClient(&redis.Options{
 		Addr: "localhost:6379",
 		DB:   0,
 	})
@@ -138,7 +139,7 @@ func nextAd(req *http.Request, slot string) *AdWithEndpoints {
 
 func getAd(req *http.Request, slot string, id string) *AdWithEndpoints {
 	key := adKey(slot, id)
-	m, _ := rd.HGetAllMap(key).Result()
+	m, _ := rd.HGetAll(key).Result()
 
 	if m == nil {
 		return nil
@@ -261,15 +262,17 @@ func routePostAd(r render.Render, req *http.Request, params martini.Params) {
 		destination = a[0]
 	}
 
-	rd.HMSet(key,
-		"slot", slot,
-		"id", id,
-		"title", title,
-		"type", content_type,
-		"advertiser", advrId,
-		"destination", destination,
-		"impressions", "0",
-	)
+	fields := make(map[string]interface{})
+
+	fields["slot"] = slot
+	fields["id"] = id
+	fields["title"] = title
+	fields["type"] = content_type
+	fields["advertiser"] = advrId
+	fields["destination"] = destination
+	fields["impressions"] = "0"
+
+	rd.HMSet(key, fields)
 
 	f, _ := asset.Open()
 	defer f.Close()
@@ -277,7 +280,7 @@ func routePostAd(r render.Render, req *http.Request, params martini.Params) {
 	io.Copy(buf, f)
 	asset_data := string(buf.Bytes())
 
-	rd.Set(assetKey(slot, id), asset_data)
+	rd.Set(assetKey(slot, id), asset_data, 60*time.Second)
 	rd.RPush(slotKey(slot), id)
 	rd.SAdd(advertiserKey(advrId), key)
 
@@ -374,7 +377,7 @@ func routeGetAdCount(r render.Render, params martini.Params) {
 	key := adKey(slot, id)
 
 	exists, _ := rd.Exists(key).Result()
-	if !exists {
+	if exists == 0 {
 		r.JSON(404, map[string]string{"error": "not_found"})
 		return
 	}
@@ -434,7 +437,7 @@ func routeGetReport(req *http.Request, r render.Render) {
 	report := map[string]*Report{}
 	adKeys, _ := rd.SMembers(advertiserKey(advrId)).Result()
 	for _, adKey := range adKeys {
-		ad, _ := rd.HGetAllMap(adKey).Result()
+		ad, _ := rd.HGetAll(adKey).Result()
 		if ad == nil {
 			continue
 		}
@@ -477,7 +480,7 @@ func routeGetFinalReport(req *http.Request, r render.Render) {
 	reports := map[string]*Report{}
 	adKeys, _ := rd.SMembers(advertiserKey(advrId)).Result()
 	for _, adKey := range adKeys {
-		ad, _ := rd.HGetAllMap(adKey).Result()
+		ad, _ := rd.HGetAll(adKey).Result()
 		if ad == nil {
 			continue
 		}
