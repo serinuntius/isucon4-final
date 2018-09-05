@@ -15,6 +15,8 @@ import (
 	"github.com/go-martini/martini"
 	"github.com/go-redis/redis"
 	"github.com/martini-contrib/render"
+	"os/exec"
+	"log"
 )
 
 type Ad struct {
@@ -164,7 +166,7 @@ func getAd(req *http.Request, slot string, id string) *AdWithEndpoints {
 			m["destination"],
 			imp,
 		},
-		urlFor(req, path_base+"/asset"),
+		urlFor(req, "/data/"+id),
 		urlFor(req, path_base+"/redirect"),
 		urlFor(req, path_base+"/count"),
 	}
@@ -550,6 +552,11 @@ func routePostInitialize() (int, string) {
 	path := getDir("log")
 	os.RemoveAll(path)
 
+	err := exec.Command("rm", "-rf /home/isucon/data/*").Run()
+	if err != nil {
+		log.Println(err)
+	}
+
 	return 200, "OK"
 }
 
@@ -560,6 +567,9 @@ func main() {
 	m.Use(render.Renderer(render.Options{
 		Layout: "layout",
 	}))
+
+	// /slots/8-pensive_ardinghelli/ads/36/count
+	// /slots/\s+/ads/\d+/count
 
 	m.Group("/slots/:slot", func(r martini.Router) {
 		m.Post("/ads", routePostAd)
